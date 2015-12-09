@@ -59,9 +59,9 @@ class DFPlayer {
   public:
     // Initialize
     DFPlayer();
-    DFPlayer(SerialMode mode, int tx, int rx);
+    DFPlayer(SerialMode mode, int rxPin, int txPin);
     ~DFPlayer();
-    void initialize(SerialMode mode, int tx, int rx);
+    void initialize(SerialMode mode, int rxPin, int txPin);
     void reset();
     void standby();
     

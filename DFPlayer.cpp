@@ -13,9 +13,9 @@ DFPlayer::DFPlayer() {
 }
 
 
-DFPlayer::DFPlayer(SerialMode mode, int tx, int rx) {
+DFPlayer::DFPlayer(SerialMode mode, int rxPin, int txPin) {
   initialized_ = false;
-  initialize(mode, tx, rx);
+  initialize(mode, rxPin, txPin);
 }
 
 
@@ -24,11 +24,11 @@ DFPlayer::~DFPlayer() {
 }
 
 
-void DFPlayer::initialize(SerialMode mode, int tx, int rx) {
+void DFPlayer::initialize(SerialMode mode, int rxPin, int txPin) {
   serial_mode_ = mode;
   if(serial_mode_ == SM_Software) {
     // Software Serial
-    software_serial_ = new SoftwareSerial(tx, rx);
+    software_serial_ = new SoftwareSerial(rxPin, txPin);
     software_serial_->begin(9600);
   } else {
     // Use the Hardware Serial
