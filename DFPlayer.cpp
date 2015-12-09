@@ -9,17 +9,24 @@
 
 
 DFPlayer::DFPlayer() {
+  initialized_ = false;
 }
 
 
 DFPlayer::DFPlayer(SerialMode mode, int tx, int rx) {
+  initialized_ = false;
   initialize(mode, tx, rx);
+}
+
+
+DFPlayer::~DFPlayer() {
+  delete software_serial_;
 }
 
 
 void DFPlayer::initialize(SerialMode mode, int tx, int rx) {
   serial_mode_ = mode;
-  if(serial_mode_ == SOFTWARE) {
+  if(serial_mode_ == SM_Software) {
     // Software Serial
     software_serial_ = new SoftwareSerial(tx, rx);
     software_serial_->begin(9600);
@@ -28,89 +35,161 @@ void DFPlayer::initialize(SerialMode mode, int tx, int rx) {
     Serial.begin(9600);
   }
   
-  delay(DFPLAYER_CMD_DELAY);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void DFPlayer::play() {
-  execute_cmd(0x01, 0, 0);
-  delay(DFPLAYER_CMD_DELAY);
-}
-
-
-void DFPlayer::play(byte track, byte folder) {
-  execute_cmd(0x0F, folder, track);
-  delay(DFPLAYER_CMD_DELAY);
-}
-
-
-void DFPlayer::pause() {
-  execute_cmd(0x0E, 0, 0);
-  delay(DFPLAYER_CMD_DELAY);
-}
-
-
-byte DFPlayer::query_folders() {
-  software_serial_->listen();
-  execute_cmd(0x4F, 0 ,0);
-  return read_cmd();
-}
-
-
-byte DFPlayer::query_tracks(byte folder) {
-  software_serial_->listen();
-  execute_cmd(0x4E, 0, folder);
-  return read_cmd();
-}
-
-
-void DFPlayer::repeat(bool enable) {
-  execute_cmd(0x19, 0, !enable);
-  delay(DFPLAYER_CMD_DELAY);
+  delay(DFPLAYER_INIT_DELAY);
+  initialized_ = true;
 }
 
 
 void DFPlayer::reset() {
-  execute_cmd(0x0C, 0, 0);
-  delay(DFPLAYER_CMD_DELAY);
+  execute_cmd(DFPLAYER_RESET, 0 ,0);
 }
 
 
-void DFPlayer::set_volume(byte volume) {
-  execute_cmd(0x06, 0, volume);
-  delay(DFPLAYER_CMD_DELAY);
+void DFPlayer::standby() {
+  execute_cmd(DFPLAYER_STANDBY);
+}
+
+
+void DFPlayer::increase_volume() {
+  execute_cmd(DFPLAYER_INCREASE_VOLUME);
+}
+
+
+void DFPlayer::decrease_volume() {
+  execute_cmd(DFPLAYER_INCREASE_VOLUME);
+}
+
+
+void DFPlayer::set_volume(int volume) {
+  execute_cmd(DFPLAYER_SPECIFY_VOLUME, 0, volume);
+}
+
+
+int DFPlayer::get_volume() {
+  return read_cmd(DFPLAYER_QUERY_VOLUME);
+}
+
+
+void DFPlayer::set_eq(Equalizer eq) {
+  execute_cmd(DFPLAYER_SPECIFY_EQ, 0, eq);
+}
+
+
+Equalizer DFPlayer::get_eq() {
+  return read_cmd(DFPLAYER_QUERY_EQ);
 }
 
 
 void DFPlayer::stop() {
-  execute_cmd(0x16, 0, 0);
-  delay(DFPLAYER_CMD_DELAY);
+  execute_cmd(DFPLAYER_STOP);
+}
+
+
+void DFPlayer::pause() {
+  execute_cmd(DFPLAYER_PAUSE);
 }
 
 
 void DFPlayer::unpause() {
-  execute_cmd(0x0D, 0, 0);
-  delay(DFPLAYER_CMD_DELAY);
+  execute_cmd(DFPLAYER_UNPAUSE);
 }
-*/
+
+
+void DFPlayer::play() {
+  execute_cmd(DFPLAYER_UNPAUSE);
+}
+
+
+void DFPlayer::play_next() {
+  execute_cmd(DFPLAYER_PLAY_NEXT);
+}
+
+
+void DFPlayer::play_previous() {
+  execute_cmd(DFPLAYER_PLAY_PREVIOUS);
+}
+
+
+void DFPlayer::play_root(int track) {
+  play_root(track, false);
+}
+void DFPlayer::play_root(int track, bool repeat) {
+  execute_cmd(DFPLAYER_PLAY_ROOT, 0, track);
+  
+  if(repeat) {
+    delay(DFPLAYER_CMD_DELAY);
+    repeat(true);
+  }
+}
+
+
+void DFPlayer::play_folder(int folder, int track) {
+  play_folder(folder, track, false);
+}
+void DFPlayer::play_folder(int folder, int track, bool repeat) {
+  execute_cmd(DFPLAYER_PLAY_FOLDER, folder, track);
+  
+  if(repeat) {
+    delay(DFPLAYER_CMD_DELAY);
+    repeat(true);
+  }
+}
+
+
+void DFPlayer::play_mp3(int track) {
+  play_mp3(track, false);
+}
+void DFPlayer::play_mp3(int track, bool repeat) {
+  execute_cmd(DFPLAYER_PLAY_MP3, 0, track);
+  
+  if(repeat) {
+    delay(DFPLAYER_CMD_DELAY);
+    repeat(true);
+  }
+}
+
+
+void DFPlayer::play_ad(int track) {
+  execute_cmd(DFPLAYER_PLAY_AD, 0, track);
+}
+
+
+void DFPlayer::stop_ad() {
+  execute_cmd(DFPLAYER_STOP_AD);
+}
+
+
+void DFPlayer::repeat(bool repeat) {
+  execute_cmd(DFPLAYER_REPEAT_CURRENT, 0, repeat);
+}
+
+
+int DFPlayer::get_folders() {
+  return read_cmd(DFPLAYER_QUERY_FOLDERS);
+}
+
+
+int DFPlayer::get_tracks() {
+  return read_cmd(DFPLAYER_QUERY_SD_FILES);
+}
+int DFPlayer::get_tracks(int folder) {
+  return read_cmd(DFPLAYER_QUERY_FOLDER_FILES, 0, folder);
+}
+
+
+int DFPlayer::get_playing() {
+  return read_cmd(DFPLAYER_QUERY_SD_TRACK);
+}
+
 
 
 ////////////////////////////
 // Private Methods
 ////////////////////////////
 
+void DFPlayer::execute_cmd(byte command) {
+  execute_cmd(command, 0, 0);
+}
 void DFPlayer::execute_cmd(byte command, byte param1, byte param2) {
   // Calculate the command checksum
   word checksum = -(
@@ -142,11 +221,19 @@ void DFPlayer::execute_cmd(byte command, byte param1, byte param2) {
   }
 }
 
-
-int DFPlayer::read_cmd() {
+int DFPlayer::read_cmd(byte command) {
+  return read_cmd(command, 0, 0);
+}
+int DFPlayer::read_cmd(byte command, byte param1, byte param2) {
   int result = 0;
   int timeout = DFPLAYER_READ_TIMEOUT;
   int i = 0;
+  
+  if(serial_mode_ == SOFTWARE) {
+    software_serial_->listen();
+  }
+  
+  execute_cmd(command, param1, param2);
   
   while(timeout-- > 0 && i < 10) {
     if(serial_available() > 0) {
@@ -166,7 +253,7 @@ int DFPlayer::read_cmd() {
 
 
 int DFPlayer::serial_available() {
-  if(serial_mode_ == SOFTWARE) {
+  if(serial_mode_ == SM_Software) {
     return software_serial_->available();
   } else {
     return Serial.available();
@@ -174,8 +261,8 @@ int DFPlayer::serial_available() {
 }
 
 
-byte DFPlayer::serial_read() {
-  if(serial_mode_ == SOFTWARE) {
+int DFPlayer::serial_read() {
+  if(serial_mode_ == SM_Software) {
     return software_serial_->read();
   } else {
     return Serial.read();
@@ -184,7 +271,7 @@ byte DFPlayer::serial_read() {
 
 
 void DFPlayer::serial_write(byte b) {
-  if(serial_mode_ == SOFTWARE) {
+  if(serial_mode_ == SM_Software) {
     software_serial_->write(b);
   } else {
     Serial.write(b);
