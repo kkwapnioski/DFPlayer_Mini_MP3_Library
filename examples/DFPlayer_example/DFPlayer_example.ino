@@ -2,14 +2,13 @@
 
 static const int TX_PIN = 10;
 static const int RX_PIN = 11;
-DFPlayer* dfplayer;
+
+DFPlayer dfplayer(SOFTWARE, TX_PIN, RX_PIN);
 
 void setup () {
-  dfplayer = new DFPlayer(TX_PIN, RX_PIN);
-  dfplayer->play();
+  dfplayer.play();
 }
 
 
-//
 void loop () { 
 }

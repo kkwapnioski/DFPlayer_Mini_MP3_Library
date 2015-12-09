@@ -8,13 +8,19 @@
 ////////////////////////////
 
 
-DFPlayer::DFPlayer() {}
+DFPlayer::DFPlayer() {
+}
 
 
-void DFPlayer::initialize(DFPlayerSerialMode mode, int tx, int rx) {
+DFPlayer::DFPlayer(SerialMode mode, int tx, int rx) {
+  initialize(mode, tx, rx);
+}
+
+
+void DFPlayer::initialize(SerialMode mode, int tx, int rx) {
   serial_mode_ = mode;
   if(serial_mode_ == SOFTWARE) {
-    // Use a Software Serial Connection on the specified pins
+    // Software Serial
     software_serial_ = new SoftwareSerial(tx, rx);
     software_serial_->begin(9600);
   } else {
@@ -25,6 +31,19 @@ void DFPlayer::initialize(DFPlayerSerialMode mode, int tx, int rx) {
   delay(DFPLAYER_CMD_DELAY);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 void DFPlayer::play() {
   execute_cmd(0x01, 0, 0);
   delay(DFPLAYER_CMD_DELAY);
@@ -85,6 +104,7 @@ void DFPlayer::unpause() {
   execute_cmd(0x0D, 0, 0);
   delay(DFPLAYER_CMD_DELAY);
 }
+*/
 
 
 ////////////////////////////
@@ -119,34 +139,47 @@ void DFPlayer::execute_cmd(byte command, byte param1, byte param2) {
   // Send the Command
   for(int i=0; i < 10; i++) {
     serial_write(cmd[i]);
-    Serial.print(cmd[i]); Serial.print(" ");
   }
-  Serial.println("");
-  Serial.println("");
 }
 
 
-byte DFPlayer::read_cmd() {
-  byte r = 0;
-  byte i = 0;
-  int timeout = 25;
+int DFPlayer::read_cmd() {
+  int result = 0;
+  int timeout = DFPLAYER_READ_TIMEOUT;
+  int i = 0;
   
   while(timeout-- > 0 && i < 10) {
-    if(software_serial_->available() > 0) {
-      byte b = software_serial_->read();
-      Serial.print(b);
-      Serial.print(" ");
+    if(serial_available() > 0) {
+      byte b = serial_read();
       i++;
+      
       if (i == 7) {
-        r = b;
+        result = b;
       }
     } else {
-      delay(10);
+      delay(1);
     }
   }
-  Serial.println("");
   
-  return r;
+  return result;
+}
+
+
+int DFPlayer::serial_available() {
+  if(serial_mode_ == SOFTWARE) {
+    return software_serial_->available();
+  } else {
+    return Serial.available();
+  }
+}
+
+
+byte DFPlayer::serial_read() {
+  if(serial_mode_ == SOFTWARE) {
+    return software_serial_->read();
+  } else {
+    return Serial.read();
+  }
 }
 
 
