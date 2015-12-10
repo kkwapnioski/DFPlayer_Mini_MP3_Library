@@ -67,11 +67,11 @@ class DFPlayer {
     
     // Settings
     void increase_volume();
-    void descrease_volume();
-    void set_volume(byte volume);
+    void decrease_volume();
+    void set_volume(int volume);
     int get_volume();
-    void set_eq(EQ eq);
-    EQ get_eq();
+    void set_eq(Equalizer eq);
+    Equalizer get_eq();
     
     // Playback
     void stop();
@@ -105,7 +105,7 @@ class DFPlayer {
     static const byte DFPLAYER_ACK_BYTE     = 0x01;
     static const byte DFPLAYER_END_BYTE     = 0xEF;
     static const int  DFPLAYER_INIT_DELAY   = 250;
-    static const int  DFPLAYER_CMD_DELAY    = 25;
+    static const int  DFPLAYER_CMD_DELAY    = 10;
     static const int  DFPLAYER_READ_TIMEOUT = 250;
     
     // Members
@@ -121,7 +121,6 @@ class DFPlayer {
     int serial_available();
     int serial_read();
     void serial_write(byte b);
-    
 };
 
 

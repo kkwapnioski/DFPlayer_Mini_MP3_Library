@@ -25,10 +25,13 @@ DFPlayer::~DFPlayer() {
 
 
 void DFPlayer::initialize(SerialMode mode, int rxPin, int txPin) {
+  Serial.println("Initializing");
   serial_mode_ = mode;
   if(serial_mode_ == SM_Software) {
     // Software Serial
+    Serial.println("SoftwareSerial");
     software_serial_ = new SoftwareSerial(rxPin, txPin);
+    Serial.println("Begin");
     software_serial_->begin(9600);
   } else {
     // Use the Hardware Serial
@@ -37,6 +40,7 @@ void DFPlayer::initialize(SerialMode mode, int rxPin, int txPin) {
   
   delay(DFPLAYER_INIT_DELAY);
   initialized_ = true;
+  Serial.println("Initialize Complete");
 }
 
 
@@ -76,7 +80,7 @@ void DFPlayer::set_eq(Equalizer eq) {
 
 
 Equalizer DFPlayer::get_eq() {
-  return read_cmd(DFPLAYER_QUERY_EQ);
+  return (Equalizer)read_cmd(DFPLAYER_QUERY_EQ);
 }
 
 
@@ -113,10 +117,10 @@ void DFPlayer::play_previous() {
 void DFPlayer::play_root(int track) {
   play_root(track, false);
 }
-void DFPlayer::play_root(int track, bool repeat) {
+void DFPlayer::play_root(int track, bool bRepeat) {
   execute_cmd(DFPLAYER_PLAY_ROOT, 0, track);
   
-  if(repeat) {
+  if(bRepeat) {
     delay(DFPLAYER_CMD_DELAY);
     repeat(true);
   }
@@ -126,10 +130,10 @@ void DFPlayer::play_root(int track, bool repeat) {
 void DFPlayer::play_folder(int folder, int track) {
   play_folder(folder, track, false);
 }
-void DFPlayer::play_folder(int folder, int track, bool repeat) {
+void DFPlayer::play_folder(int folder, int track, bool bRepeat) {
   execute_cmd(DFPLAYER_PLAY_FOLDER, folder, track);
   
-  if(repeat) {
+  if(bRepeat) {
     delay(DFPLAYER_CMD_DELAY);
     repeat(true);
   }
@@ -139,10 +143,10 @@ void DFPlayer::play_folder(int folder, int track, bool repeat) {
 void DFPlayer::play_mp3(int track) {
   play_mp3(track, false);
 }
-void DFPlayer::play_mp3(int track, bool repeat) {
+void DFPlayer::play_mp3(int track, bool bRepeat) {
   execute_cmd(DFPLAYER_PLAY_MP3, 0, track);
   
-  if(repeat) {
+  if(bRepeat) {
     delay(DFPLAYER_CMD_DELAY);
     repeat(true);
   }
@@ -159,8 +163,8 @@ void DFPlayer::stop_ad() {
 }
 
 
-void DFPlayer::repeat(bool repeat) {
-  execute_cmd(DFPLAYER_REPEAT_CURRENT, 0, repeat);
+void DFPlayer::repeat(bool bRepeat) {
+  execute_cmd(DFPLAYER_REPEAT_CURRENT, 0, !bRepeat);
 }
 
 
@@ -218,7 +222,9 @@ void DFPlayer::execute_cmd(byte command, byte param1, byte param2) {
   // Send the Command
   for(int i=0; i < 10; i++) {
     serial_write(cmd[i]);
+    Serial.print(cmd[i], HEX); Serial.print(" ");
   }
+  Serial.println("");
 }
 
 int DFPlayer::read_cmd(byte command) {
@@ -229,7 +235,7 @@ int DFPlayer::read_cmd(byte command, byte param1, byte param2) {
   int timeout = DFPLAYER_READ_TIMEOUT;
   int i = 0;
   
-  if(serial_mode_ == SOFTWARE) {
+  if(serial_mode_ == SM_Software) {
     software_serial_->listen();
   }
   
